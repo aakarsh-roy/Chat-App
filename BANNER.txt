@@ -1,0 +1,57 @@
+
+   ██████╗██╗  ██╗ █████╗ ████████╗ █████╗ ██████╗ ██████╗ 
+  ██╔════╝██║  ██║██╔══██╗╚══██╔══╝██╔══██╗██╔══██╗██╔══██╗
+  ██║     ███████║███████║   ██║   ███████║██████╔╝██████╔╝
+  ██║     ██╔══██║██╔══██║   ██║   ██╔══██║██╔═══╝ ██╔═══╝ 
+  ╚██████╗██║  ██║██║  ██║   ██║   ██║  ██║██║     ██║     
+   ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝     
+                                                            
+         Real-Time Chat Application - MERN Stack           
+  ════════════════════════════════════════════════════════
+
+  🚀 A production-ready chat application with:
+     ✓ Real-time messaging
+     ✓ User authentication
+     ✓ File sharing
+     ✓ Online status
+     ✓ Typing indicators
+
+  📚 Complete Documentation:
+     • README.md - Main documentation
+     • QUICK_START.md - Get started fast
+     • API_DOCUMENTATION.md - API reference
+     • ARCHITECTURE.md - System design
+     • COMMANDS.md - Helpful commands
+     • DEPLOYMENT_CHECKLIST.md - Go live guide
+
+  🛠️ Tech Stack:
+     • MongoDB - Database
+     • Express.js - Backend framework
+     • React - Frontend library
+     • Node.js - Runtime
+     • Socket.io - Real-time engine
+
+  ⚡ Quick Start:
+     Windows: .\setup.ps1 && .\start.ps1
+     Manual: See QUICK_START.md
+
+  🌐 Default URLs:
+     Frontend: http://localhost:3000
+     Backend:  http://localhost:5000
+     MongoDB:  mongodb://localhost:27017
+
+  📖 First Time?
+     1. Run setup.ps1
+     2. Configure .env files
+     3. Run start.ps1
+     4. Open http://localhost:3000
+     5. Create account and chat!
+
+  🤝 Contributing:
+     See CONTRIBUTING.md for guidelines
+
+  📄 License: MIT
+
+  ════════════════════════════════════════════════════════
+         Built with ❤️ using the MERN Stack
+  ════════════════════════════════════════════════════════
