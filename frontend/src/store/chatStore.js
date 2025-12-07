@@ -23,7 +23,18 @@ export const useChatStore = create((set, get) => ({
     try {
       set({ isLoading: true });
       const { data } = await axiosInstance.get('/api/conversations');
-      set({ conversations: data, isLoading: false });
+      
+      // Preserve currentConversation reference
+      const currentConvId = get().currentConversation?._id;
+      const updatedCurrentConv = currentConvId 
+        ? data.find(conv => conv._id === currentConvId)
+        : null;
+      
+      set({ 
+        conversations: data, 
+        isLoading: false,
+        currentConversation: updatedCurrentConv || get().currentConversation
+      });
     } catch (error) {
       console.error('Failed to fetch conversations:', error);
       set({ isLoading: false });

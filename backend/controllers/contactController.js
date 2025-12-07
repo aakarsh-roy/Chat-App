@@ -1,5 +1,33 @@
 import User from '../models/User.js';
 
+// @desc    Search users
+// @route   GET /api/contacts/search
+// @access  Private
+export const searchUsers = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query) {
+      return res.json([]);
+    }
+
+    const users = await User.find({
+      _id: { $ne: req.user._id }, // Exclude current user
+      $or: [
+        { username: { $regex: query, $options: 'i' } },
+        { fullName: { $regex: query, $options: 'i' } },
+        { email: { $regex: query, $options: 'i' } },
+      ],
+    })
+      .select('username fullName email avatar status')
+      .limit(20);
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Get user contacts
 // @route   GET /api/contacts
 // @access  Private

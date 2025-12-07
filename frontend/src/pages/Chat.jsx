@@ -6,12 +6,14 @@ import Sidebar from '../components/Sidebar';
 import ChatWindow from '../components/ChatWindow';
 import UserProfile from '../components/UserProfile';
 import SearchUsers from '../components/SearchUsers';
+import CreateGroup from '../components/CreateGroup';
 
 export default function Chat() {
   const { currentConversation, fetchConversations, addMessage, updateOnlineUsers, setTyping } = useChatStore();
   const { user } = useAuthStore();
   const [showProfile, setShowProfile] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
 
   useEffect(() => {
     // Fetch conversations on mount
@@ -95,7 +97,15 @@ export default function Chat() {
 
       {/* Search Users Modal */}
       {showSearch && (
-        <SearchUsers onClose={() => setShowSearch(false)} />
+        <SearchUsers 
+          onClose={() => setShowSearch(false)} 
+          onCreateGroupClick={() => setShowCreateGroup(true)}
+        />
+      )}
+
+      {/* Create Group Modal */}
+      {showCreateGroup && (
+        <CreateGroup onClose={() => setShowCreateGroup(false)} />
       )}
     </div>
   );

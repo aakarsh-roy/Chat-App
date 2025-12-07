@@ -39,6 +39,34 @@ export const getConversation = async (req, res) => {
   }
 };
 
+// @desc    Create group conversation
+// @route   POST /api/conversations/group
+// @access  Private
+export const createGroupConversation = async (req, res) => {
+  try {
+    const { groupName, participants } = req.body;
+
+    if (!groupName || !participants || participants.length < 2) {
+      return res.status(400).json({ message: 'Group name and at least 2 participants are required' });
+    }
+
+    const conversationData = {
+      participants: [req.user._id, ...participants],
+      isGroup: true,
+      groupName,
+      groupAdmin: req.user._id,
+    };
+
+    const conversation = await Conversation.create(conversationData);
+    const populatedConversation = await Conversation.findById(conversation._id)
+      .populate('participants', 'username fullName avatar status');
+
+    res.status(201).json(populatedConversation);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Create new conversation
 // @route   POST /api/conversations
 // @access  Private
