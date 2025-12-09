@@ -5,9 +5,11 @@ import {
   login,
   getMe,
   updateProfile,
+  uploadAvatar,
   searchUsers,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { uploadAvatar as uploadMiddleware } from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
@@ -35,6 +37,7 @@ router.post(
 // Protected routes
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
+router.post('/upload-avatar', protect, uploadMiddleware.single('avatar'), uploadAvatar);
 router.get('/search', protect, searchUsers);
 
 export default router;

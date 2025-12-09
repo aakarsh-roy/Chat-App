@@ -33,3 +33,35 @@ export const upload = multer({
   },
   fileFilter: fileFilter,
 });
+
+// Avatar-specific upload configuration
+const avatarStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/avatars/');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const avatarFileFilter = (req, file, cb) => {
+  // Only allow image files
+  const allowedTypes = /jpeg|jpg|png|gif|webp/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = file.mimetype.startsWith('image/');
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only images are allowed for avatars.'));
+  }
+};
+
+export const uploadAvatar = multer({
+  storage: avatarStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit for avatars
+  },
+  fileFilter: avatarFileFilter,
+});

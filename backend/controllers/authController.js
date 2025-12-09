@@ -128,6 +128,35 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+// @desc    Upload avatar
+// @route   POST /api/auth/upload-avatar
+// @access  Private
+export const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+
+    // Update user avatar
+    const user = await User.findById(req.user._id);
+    if (user) {
+      user.avatar = avatarUrl;
+      await user.save();
+
+      res.json({
+        avatar: avatarUrl,
+        message: 'Avatar uploaded successfully',
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Search users
 // @route   GET /api/auth/search?query=searchTerm
 // @access  Private

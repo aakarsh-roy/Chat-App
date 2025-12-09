@@ -48,8 +48,12 @@ app.use(express.urlencoded({ extended: true }));
 // Create uploads directory if it doesn't exist
 import fs from 'fs';
 const uploadsDir = path.join(__dirname, 'uploads');
+const avatarsDir = path.join(__dirname, 'uploads/avatars');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
+}
+if (!fs.existsSync(avatarsDir)) {
+  fs.mkdirSync(avatarsDir, { recursive: true });
 }
 
 // Serve static files
