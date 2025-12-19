@@ -46,6 +46,16 @@ A full-stack, production-ready chat application built with the MERN stack (Mongo
   - Smooth animations
   - Loading states and error handling
 
+### 🔒 Security & Scalability Features
+- **Rate Limiting**: Protection against abuse and DDoS attacks
+- **Input Sanitization**: MongoDB injection and XSS prevention
+- **Security Headers**: Helmet.js with CSP, HSTS, and more
+- **File Upload Security**: Strict validation and path traversal prevention
+- **Database Connection Pooling**: Optimized for scalability
+- **Request Logging**: Comprehensive access and error logging
+- **Environment Validation**: Startup validation of all configurations
+- **Strong Password Policy**: Enforced password complexity requirements
+
 ### Technical Features
 - **Modular Architecture**: Clean separation of concerns
 - **Scalable Design**: Ready for horizontal scaling

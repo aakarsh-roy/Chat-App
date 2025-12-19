@@ -12,7 +12,14 @@ export const useChatStore = create((set, get) => ({
   isLoading: false,
 
   setCurrentConversation: (conversation) => {
+    // Leave previous conversation
+    const prevConversation = get().currentConversation;
+    if (prevConversation) {
+      socketService.emit('leave-conversation', prevConversation._id);
+    }
+
     set({ currentConversation: conversation, messages: [] });
+    
     if (conversation) {
       get().fetchMessages(conversation._id);
       socketService.emit('join-conversation', conversation._id);
@@ -115,6 +122,21 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  clearChat: async (conversationId) => {
+    try {
+      await axiosInstance.delete(`/api/conversations/${conversationId}/messages`);
+      
+      set((state) => ({
+        messages: state.currentConversation?._id === conversationId ? [] : state.messages,
+      }));
+
+      toast.success('Chat cleared');
+    } catch (error) {
+      console.error('Failed to clear chat:', error);
+      toast.error('Failed to clear chat');
+    }
+  },
+
   deleteConversation: async (conversationId) => {
     try {
       await axiosInstance.delete(`/api/conversations/${conversationId}`);
@@ -144,9 +166,58 @@ export const useChatStore = create((set, get) => ({
         conversationId: get().currentConversation?._id,
         messageId,
       });
+
+      // Update local message status
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg._id === messageId
+            ? { ...msg, readBy: [...(msg.readBy || []), { user: state.currentConversation?.participants.find(p => p._id !== msg.sender._id)?._id }] }
+            : msg
+        ),
+      }));
     } catch (error) {
       console.error('Failed to mark message as read:', error);
     }
+  },
+
+  markAsDelivered: async (messageId) => {
+    try {
+      socketService.emit('message-delivered', {
+        conversationId: get().currentConversation?._id,
+        messageId,
+      });
+
+      // Update local message status
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg._id === messageId
+            ? { ...msg, deliveredTo: [...(msg.deliveredTo || []), { user: state.currentConversation?.participants.find(p => p._id !== msg.sender._id)?._id }] }
+            : msg
+        ),
+      }));
+    } catch (error) {
+      console.error('Failed to mark message as delivered:', error);
+    }
+  },
+
+  updateMessageReadStatus: (messageId, userId) => {
+    set((state) => ({
+      messages: state.messages.map((msg) =>
+        msg._id === messageId
+          ? { ...msg, readBy: [...(msg.readBy || []), { user: userId, readAt: new Date() }] }
+          : msg
+      ),
+    }));
+  },
+
+  updateMessageDeliveredStatus: (messageId, userId) => {
+    set((state) => ({
+      messages: state.messages.map((msg) =>
+        msg._id === messageId
+          ? { ...msg, deliveredTo: [...(msg.deliveredTo || []), { user: userId, deliveredAt: new Date() }] }
+          : msg
+      ),
+    }));
   },
 
   addMessage: (message) => {

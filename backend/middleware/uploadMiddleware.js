@@ -12,17 +12,44 @@ const storage = multer.diskStorage({
   },
 });
 
-// File filter
+// Enhanced file filter with strict validation
 const fileFilter = (req, file, cb) => {
-  // Allow images and common file types
-  const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|txt|mp3|mp4|wav/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
+  // Allowed MIME types with their corresponding extensions
+  const allowedMimeTypes = {
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/png': ['.png'],
+    'image/gif': ['.gif'],
+    'image/webp': ['.webp'],
+    'application/pdf': ['.pdf'],
+    'application/msword': ['.doc'],
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+    'text/plain': ['.txt'],
+    'audio/mpeg': ['.mp3'],
+    'video/mp4': ['.mp4'],
+    'audio/wav': ['.wav'],
+  };
 
-  if (mimetype && extname) {
+  const fileExt = path.extname(file.originalname).toLowerCase();
+  const allowedExtensions = allowedMimeTypes[file.mimetype];
+
+  // Validate both MIME type and extension
+  if (allowedExtensions && allowedExtensions.includes(fileExt)) {
+    // Additional security: Check for double extensions
+    const fileName = file.originalname.toLowerCase();
+    const extensionCount = (fileName.match(/\./g) || []).length;
+    
+    if (extensionCount > 1) {
+      return cb(new Error('Invalid file name. Multiple extensions detected.'));
+    }
+    
+    // Prevent path traversal attacks
+    if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+      return cb(new Error('Invalid file name. Path traversal detected.'));
+    }
+    
     return cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only images and documents are allowed.'));
+    cb(new Error('Invalid file type. Please upload only allowed file formats.'));
   }
 };
 
@@ -46,16 +73,39 @@ const avatarStorage = multer.diskStorage({
 });
 
 const avatarFileFilter = (req, file, cb) => {
-  // Only allow image files
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = file.mimetype.startsWith('image/');
+  // Strict image validation for avatars
+  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+  
+  const fileExt = path.extname(file.originalname).toLowerCase();
+  const fileName = file.originalname.toLowerCase();
 
-  if (mimetype && extname) {
-    return cb(null, true);
-  } else {
-    cb(new Error('Invalid file type. Only images are allowed for avatars.'));
+  // Validate MIME type
+  if (!allowedMimeTypes.includes(file.mimetype)) {
+    return cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'));
   }
+
+  // Validate extension
+  if (!allowedExtensions.includes(fileExt)) {
+    return cb(new Error('Invalid file extension.'));
+  }
+
+  // Check for double extensions
+  if ((fileName.match(/\./g) || []).length > 1) {
+    return cb(new Error('Invalid file name. Multiple extensions detected.'));
+  }
+
+  // Prevent path traversal
+  if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+    return cb(new Error('Invalid file name. Path traversal detected.'));
+  }
+
+  // Additional check: Validate file size in filter (for early rejection)
+  if (req.headers['content-length'] && parseInt(req.headers['content-length']) > 5 * 1024 * 1024) {
+    return cb(new Error('File too large. Maximum size is 5MB.'));
+  }
+
+  cb(null, true);
 };
 
 export const uploadAvatar = multer({

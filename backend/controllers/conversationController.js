@@ -112,6 +112,29 @@ export const createConversation = async (req, res) => {
   }
 };
 
+// @desc    Clear all messages in a conversation
+// @route   DELETE /api/conversations/:id/messages
+// @access  Private
+export const clearConversationMessages = async (req, res) => {
+  try {
+    const conversation = await Conversation.findOne({
+      _id: req.params.id,
+      participants: req.user._id,
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+
+    // Delete all messages in conversation
+    await Message.deleteMany({ conversation: conversation._id });
+
+    res.json({ message: 'Messages cleared successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Delete conversation
 // @route   DELETE /api/conversations/:id
 // @access  Private

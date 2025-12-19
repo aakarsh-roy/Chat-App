@@ -9,7 +9,16 @@ import SearchUsers from '../components/SearchUsers';
 import CreateGroup from '../components/CreateGroup';
 
 export default function Chat() {
-  const { currentConversation, fetchConversations, addMessage, updateOnlineUsers, setTyping } = useChatStore();
+  const { 
+    currentConversation, 
+    fetchConversations, 
+    addMessage, 
+    updateOnlineUsers, 
+    setTyping,
+    updateMessageReadStatus,
+    updateMessageDeliveredStatus,
+    markAsDelivered
+  } = useChatStore();
   const { user } = useAuthStore();
   const [showProfile, setShowProfile] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -27,6 +36,11 @@ export default function Chat() {
       socket.on('receive-message', (message) => {
         addMessage(message);
         fetchConversations(); // Update conversation list
+        
+        // Mark as delivered automatically
+        if (message.sender._id !== user._id) {
+          markAsDelivered(message._id);
+        }
       });
 
       // Handle user online status
@@ -45,10 +59,14 @@ export default function Chat() {
         }
       });
 
-      // Handle message read status
+      // Handle message read status update
       socket.on('message-read-update', ({ messageId, userId }) => {
-        // Update message read status in UI
-        console.log(`Message ${messageId} read by ${userId}`);
+        updateMessageReadStatus(messageId, userId);
+      });
+
+      // Handle message delivered status update
+      socket.on('message-delivered-update', ({ messageId, userId }) => {
+        updateMessageDeliveredStatus(messageId, userId);
       });
     }
 
@@ -59,12 +77,13 @@ export default function Chat() {
         socket.off('user-offline');
         socket.off('user-typing');
         socket.off('message-read-update');
+        socket.off('message-delivered-update');
       }
     };
   }, [currentConversation]);
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-100">
+    <div className="h-screen flex overflow-hidden bg-gray-100 dark:bg-gray-900">
       {/* Sidebar */}
       <Sidebar 
         onProfileClick={() => setShowProfile(true)}
@@ -76,13 +95,13 @@ export default function Chat() {
         {currentConversation ? (
           <ChatWindow />
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-white">
+          <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-800">
             <div className="text-center">
               <div className="text-6xl mb-4">💬</div>
-              <h3 className="text-2xl font-semibold text-gray-700 mb-2">
+              <h3 className="text-2xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
                 Welcome to ChatApp
               </h3>
-              <p className="text-gray-500">
+              <p className="text-gray-500 dark:text-gray-400">
                 Select a conversation to start chatting
               </p>
             </div>
