@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FaTimes, FaUserPlus, FaCheck } from 'react-icons/fa';
+import { FaTimes, FaUserPlus, FaCheck, FaSearch } from 'react-icons/fa';
 import { useChatStore } from '../store/chatStore';
 import axiosInstance from '../lib/axios';
 import toast from 'react-hot-toast';
@@ -13,55 +13,36 @@ export default function CreateGroup({ onClose }) {
   const { fetchConversations } = useChatStore();
 
   useEffect(() => {
-    searchUsers();
+    const search = async () => {
+      try {
+        const { data } = await axiosInstance.get(`/api/contacts/search?query=${searchQuery}`);
+        setAllUsers(data);
+      } catch (error) {
+        console.error('Failed to search users:', error);
+      }
+    };
+    search();
   }, [searchQuery]);
 
-  const searchUsers = async () => {
-    try {
-      const { data } = await axiosInstance.get(`/api/contacts/search?query=${searchQuery}`);
-      setAllUsers(data);
-    } catch (error) {
-      console.error('Failed to search users:', error);
-    }
-  };
-
   const toggleUserSelection = (user) => {
-    setSelectedUsers((prev) => {
-      const exists = prev.find((u) => u._id === user._id);
-      if (exists) {
-        return prev.filter((u) => u._id !== user._id);
-      } else {
-        return [...prev, user];
-      }
-    });
+    setSelectedUsers((prev) => prev.find((u) => u._id === user._id) ? prev.filter((u) => u._id !== user._id) : [...prev, user]);
   };
 
   const handleCreateGroup = async (e) => {
     e.preventDefault();
-    
-    if (!groupName.trim()) {
-      toast.error('Please enter a group name');
-      return;
-    }
-
-    if (selectedUsers.length < 1) {
-      toast.error('Please select at least 1 member');
-      return;
-    }
+    if (!groupName.trim()) { toast.error('Please enter a group name'); return; }
+    if (selectedUsers.length < 1) { toast.error('Please select at least 1 member'); return; }
 
     setIsLoading(true);
-
     try {
-      const { data } = await axiosInstance.post('/api/conversations/group', {
+      await axiosInstance.post('/api/conversations/group', {
         groupName: groupName.trim(),
         participants: selectedUsers.map((u) => u._id),
       });
-
-      toast.success('Group created successfully');
+      toast.success('Group created');
       await fetchConversations();
       onClose();
     } catch (error) {
-      console.error('Failed to create group:', error);
       toast.error(error.response?.data?.message || 'Failed to create group');
     } finally {
       setIsLoading(false);
@@ -69,114 +50,65 @@ export default function CreateGroup({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+    <div className="overlay animate-fadeIn" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 max-w-lg w-full mx-4 max-h-[85vh] overflow-hidden animate-modalIn" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="bg-primary-600 dark:bg-primary-700 text-white p-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Create New Group</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-primary-700 dark:hover:bg-primary-800 rounded-lg transition"
-          >
-            <FaTimes />
-          </button>
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white px-5 py-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Create New Group</h2>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition"><FaTimes /></button>
         </div>
 
-        {/* Content */}
-        <form onSubmit={handleCreateGroup} className="flex flex-col h-[calc(90vh-80px)]">
-          {/* Group Name */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Group Name
-            </label>
-            <input
-              type="text"
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-              placeholder="Enter group name..."
-              className="input w-full"
-              required
-            />
+        <form onSubmit={handleCreateGroup} className="flex flex-col" style={{ maxHeight: 'calc(85vh - 60px)' }}>
+          {/* Group name */}
+          <div className="px-5 pt-4 pb-3">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Group Name</label>
+            <input type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Enter group name..." className="input w-full" required />
           </div>
 
-          {/* Selected Users */}
+          {/* Selected chips */}
           {selectedUsers.length > 0 && (
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Selected Members ({selectedUsers.length})
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {selectedUsers.map((user) => (
-                  <div
-                    key={user._id}
-                    className="flex items-center space-x-2 bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full"
-                  >
-                    <img
-                      src={user.avatar}
-                      alt={user.fullName}
-                      className="w-5 h-5 rounded-full"
-                    />
-                    <span className="text-sm">{user.fullName}</span>
-                    <button
-                      type="button"
-                      onClick={() => toggleUserSelection(user)}
-                      className="hover:text-primary-900 dark:hover:text-primary-100"
-                    >
-                      <FaTimes size={12} />
-                    </button>
-                  </div>
+            <div className="px-5 pb-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Selected ({selectedUsers.length})</p>
+              <div className="flex flex-wrap gap-1.5">
+                {selectedUsers.map((u) => (
+                  <span key={u._id} className="inline-flex items-center gap-1.5 bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 pl-1 pr-2 py-0.5 rounded-full text-xs">
+                    <img src={u.avatar} alt="" className="w-5 h-5 rounded-full" />
+                    {u.fullName}
+                    <button type="button" onClick={() => toggleUserSelection(u)} className="hover:text-primary-900 dark:hover:text-primary-100"><FaTimes size={10} /></button>
+                  </span>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Search Users */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search users to add..."
-              className="input w-full"
-            />
+          {/* Search */}
+          <div className="px-5 pb-3">
+            <div className="relative group">
+              <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary-500 transition-colors" size={13} />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search users to add..." className="input w-full pl-10" />
+            </div>
           </div>
 
-          {/* Users List */}
-          <div className="flex-1 overflow-y-auto p-4">
+          {/* Users list */}
+          <div className="flex-1 overflow-y-auto px-5 pb-3 min-h-0" style={{ maxHeight: '250px' }}>
             {allUsers.length === 0 ? (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                <FaUserPlus className="mx-auto text-4xl mb-2 opacity-50" />
-                <p>No users found</p>
+              <div className="text-center py-8">
+                <FaUserPlus className="mx-auto text-3xl text-gray-300 dark:text-gray-600 mb-2" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">No users found</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {allUsers.map((user) => {
-                  const isSelected = selectedUsers.find((u) => u._id === user._id);
+              <div className="space-y-1">
+                {allUsers.map((u) => {
+                  const isSelected = selectedUsers.find((s) => s._id === u._id);
                   return (
-                    <div
-                      key={user._id}
-                      onClick={() => toggleUserSelection(user)}
-                      className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition ${
-                        isSelected
-                          ? 'bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-500 dark:border-primary-600'
-                          : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-transparent'
-                      }`}
-                    >
-                      <img
-                        src={user.avatar}
-                        alt={user.fullName}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
+                    <div key={u._id} onClick={() => toggleUserSelection(u)} className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition ${isSelected ? 'bg-primary-50 dark:bg-primary-900/30 ring-1 ring-primary-300 dark:ring-primary-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
+                      <img src={u.avatar} alt={u.fullName} className="w-9 h-9 rounded-full object-cover" />
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-                          {user.fullName}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">@{user.username}</p>
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{u.fullName}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{u.username}</p>
                       </div>
                       {isSelected && (
-                        <div className="flex-shrink-0 w-6 h-6 bg-primary-600 dark:bg-primary-500 rounded-full flex items-center justify-center">
-                          <FaCheck className="text-white text-xs" />
-                        </div>
+                        <div className="w-6 h-6 bg-primary-600 rounded-full flex items-center justify-center flex-shrink-0"><FaCheck className="text-white" size={10} /></div>
                       )}
                     </div>
                   );
@@ -186,21 +118,12 @@ export default function CreateGroup({ onClose }) {
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition font-medium text-gray-900 dark:text-gray-100"
-              disabled={isLoading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 btn btn-primary"
-              disabled={isLoading || !groupName.trim() || selectedUsers.length < 1}
-            >
-              {isLoading ? 'Creating...' : 'Create Group'}
+          <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+            <button type="button" onClick={onClose} disabled={isLoading} className="flex-1 btn btn-ghost">Cancel</button>
+            <button type="submit" className="flex-1 btn btn-primary" disabled={isLoading || !groupName.trim() || selectedUsers.length < 1}>
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Creating...</span>
+              ) : 'Create Group'}
             </button>
           </div>
         </form>

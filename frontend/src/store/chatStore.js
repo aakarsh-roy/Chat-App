@@ -255,4 +255,165 @@ export const useChatStore = create((set, get) => ({
   emitTyping: (conversationId, isTyping) => {
     socketService.emit('typing', { conversationId, isTyping });
   },
+
+  deleteMessage: async (messageId, deleteType = 'forMe') => {
+    try {
+      const { data } = await axiosInstance.delete(
+        `/api/messages/${messageId}?deleteType=${deleteType}`
+      );
+
+      // Remove message from local state or mark as deleted
+      set((state) => ({
+        messages: state.messages.filter((msg) => msg._id !== messageId),
+      }));
+
+      // Emit socket event for real-time update
+      socketService.emit('message-deleted', {
+        conversationId: get().currentConversation?._id,
+        messageId,
+        deleteType,
+      });
+
+      // Update conversation list
+      get().fetchConversations();
+
+      toast.success(
+        deleteType === 'forEveryone' 
+          ? 'Message deleted for everyone' 
+          : 'Message deleted for you'
+      );
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete message');
+    }
+  },
+
+  removeDeletedMessage: (messageId) => {
+    set((state) => ({
+      messages: state.messages.filter((msg) => msg._id !== messageId),
+    }));
+  },
+
+  // ───── Reactions ─────
+  reactToMessage: async (messageId, emoji) => {
+    try {
+      const { data } = await axiosInstance.post(`/api/messages/${messageId}/react`, { emoji });
+
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg._id === messageId ? { ...msg, reactions: data.reactions } : msg
+        ),
+      }));
+
+      socketService.emit('message-reaction', {
+        conversationId: get().currentConversation?._id,
+        messageId,
+        emoji,
+        userId: data.reactions?.find(r => r.emoji === emoji)?.user?._id,
+        action: 'toggle',
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Failed to react to message:', error);
+      toast.error('Failed to add reaction');
+    }
+  },
+
+  updateMessageReaction: (messageId, reactions) => {
+    set((state) => ({
+      messages: state.messages.map((msg) =>
+        msg._id === messageId ? { ...msg, reactions } : msg
+      ),
+    }));
+  },
+
+  // ───── Forward ─────
+  forwardMessage: async (messageId, conversationIds) => {
+    try {
+      const { data } = await axiosInstance.post(`/api/messages/${messageId}/forward`, {
+        conversationIds,
+      });
+      toast.success(data.message);
+      get().fetchConversations();
+      return data;
+    } catch (error) {
+      console.error('Failed to forward message:', error);
+      toast.error('Failed to forward message');
+    }
+  },
+
+  // ───── Pin ─────
+  togglePinMessage: async (messageId) => {
+    try {
+      const { data } = await axiosInstance.put(`/api/messages/${messageId}/pin`);
+
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg._id === messageId
+            ? { ...msg, isPinned: data.isPinned, pinnedBy: data.pinnedBy, pinnedAt: data.pinnedAt }
+            : msg
+        ),
+      }));
+
+      socketService.emit('message-pin-toggle', {
+        conversationId: get().currentConversation?._id,
+        messageId,
+        isPinned: data.isPinned,
+        pinnedBy: data.pinnedBy,
+      });
+
+      toast.success(data.isPinned ? 'Message pinned' : 'Message unpinned');
+      return data;
+    } catch (error) {
+      console.error('Failed to pin message:', error);
+      toast.error(error.response?.data?.message || 'Failed to pin message');
+    }
+  },
+
+  getPinnedMessages: async (conversationId) => {
+    try {
+      const { data } = await axiosInstance.get(`/api/messages/${conversationId}/pinned`);
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch pinned messages:', error);
+      return [];
+    }
+  },
+
+  // ───── Star ─────
+  toggleStarMessage: async (messageId) => {
+    try {
+      const { data } = await axiosInstance.put(`/api/messages/${messageId}/star`);
+
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg._id === messageId
+            ? {
+                ...msg,
+                starredBy: data.starred
+                  ? [...(msg.starredBy || []), 'me']
+                  : (msg.starredBy || []).filter((id) => id !== 'me'),
+              }
+            : msg
+        ),
+      }));
+
+      toast.success(data.starred ? 'Message starred' : 'Message unstarred');
+      return data;
+    } catch (error) {
+      console.error('Failed to star message:', error);
+      toast.error('Failed to star message');
+    }
+  },
+
+  getStarredMessages: async (conversationId) => {
+    try {
+      const { data } = await axiosInstance.get(`/api/messages/${conversationId}/starred`);
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch starred messages:', error);
+      return [];
+    }
+  },
 }));

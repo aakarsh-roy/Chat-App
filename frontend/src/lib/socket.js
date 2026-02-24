@@ -29,6 +29,17 @@ class SocketService {
 
     this.socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error);
+      
+      // If authentication failed, stop trying to reconnect
+      if (error.message.includes('Authentication') || error.message.includes('Invalid token') || error.message.includes('Token expired')) {
+        console.warn('Socket authentication failed. Disconnecting...');
+        this.disconnect();
+        
+        // Clear auth data and trigger logout
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.dispatchEvent(new Event('auth-logout'));
+      }
     });
 
     return this.socket;

@@ -55,12 +55,14 @@ export const useAuthStore = create(
         }
       },
 
-      logout: () => {
+      logout: (showToast = true) => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         socketService.disconnect();
         set({ user: null, token: null });
-        toast.success('Logged out successfully');
+        if (showToast) {
+          toast.success('Logged out successfully');
+        }
       },
 
       updateProfile: async (updates) => {
@@ -92,10 +94,10 @@ export const useAuthStore = create(
             // Connect socket
             socketService.connect(token);
           } else {
-            set({ isLoading: false });
+            set({ user: null, token: null, isLoading: false });
           }
         } catch (error) {
-          set({ isLoading: false });
+          set({ user: null, token: null, isLoading: false });
         }
       },
     }),
@@ -108,3 +110,13 @@ export const useAuthStore = create(
 
 // Initialize auth check
 useAuthStore.getState().checkAuth();
+
+// Listen for auth logout events from axios interceptor
+if (typeof window !== 'undefined') {
+  window.addEventListener('auth-logout', () => {
+    const state = useAuthStore.getState();
+    if (state.user) {
+      state.logout(false); // Don't show success toast for forced logout
+    }
+  });
+}

@@ -33,6 +33,23 @@ const conversationSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    pinnedMessages: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Message',
+      },
+    ],
+    description: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: '',
+    },
+    unreadCount: {
+      type: Map,
+      of: Number,
+      default: {},
+    },
   },
   {
     timestamps: true,

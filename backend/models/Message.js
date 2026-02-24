@@ -61,6 +61,60 @@ const messageSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Message',
     },
+    reactions: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+        emoji: {
+          type: String,
+          required: true,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    forwardedFrom: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Message',
+    },
+    isForwarded: {
+      type: Boolean,
+      default: false,
+    },
+    isPinned: {
+      type: Boolean,
+      default: false,
+    },
+    pinnedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    pinnedAt: {
+      type: Date,
+    },
+    starredBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    deletedForEveryone: {
+      type: Boolean,
+      default: false,
+    },
+    deletedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    deletedAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

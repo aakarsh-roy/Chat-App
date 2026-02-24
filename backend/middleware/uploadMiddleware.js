@@ -25,6 +25,9 @@ const fileFilter = (req, file, cb) => {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
     'text/plain': ['.txt'],
     'audio/mpeg': ['.mp3'],
+    'audio/mp4': ['.m4a'],
+    'audio/ogg': ['.ogg'],
+    'audio/webm': ['.webm'],
     'video/mp4': ['.mp4'],
     'audio/wav': ['.wav'],
   };

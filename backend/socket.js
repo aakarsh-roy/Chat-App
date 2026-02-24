@@ -18,7 +18,7 @@ export const initializeSocket = (server) => {
       const token = socket.handshake.auth.token;
       
       if (!token) {
-        return next(new Error('Authentication error'));
+        return next(new Error('Authentication token required'));
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -32,7 +32,17 @@ export const initializeSocket = (server) => {
       socket.user = user;
       next();
     } catch (error) {
-      next(new Error('Authentication error'));
+      console.error('Socket auth error:', error.message);
+      
+      if (error.name === 'JsonWebTokenError') {
+        return next(new Error('Invalid token'));
+      }
+      
+      if (error.name === 'TokenExpiredError') {
+        return next(new Error('Token expired'));
+      }
+      
+      return next(new Error('Authentication failed'));
     }
   });
 
@@ -99,6 +109,42 @@ export const initializeSocket = (server) => {
       socket.to(conversationId).emit('message-delivered-update', {
         messageId,
         userId: socket.userId,
+      });
+    });
+
+    // Handle message deletion
+    socket.on('message-deleted', (data) => {
+      const { conversationId, messageId, deleteType } = data;
+      socket.to(conversationId).emit('message-deleted', {
+        messageId,
+        deleteType,
+      });
+    });
+
+    // Handle message reactions
+    socket.on('message-reaction', (data) => {
+      const { conversationId, messageId, emoji, userId, action } = data;
+      socket.to(conversationId).emit('message-reaction-update', {
+        messageId,
+        emoji,
+        userId,
+        action,
+      });
+    });
+
+    // Handle message forwarded
+    socket.on('message-forwarded', (data) => {
+      const { conversationId, message } = data;
+      socket.to(conversationId).emit('receive-message', message);
+    });
+
+    // Handle message pinned/unpinned
+    socket.on('message-pin-toggle', (data) => {
+      const { conversationId, messageId, isPinned, pinnedBy } = data;
+      socket.to(conversationId).emit('message-pin-update', {
+        messageId,
+        isPinned,
+        pinnedBy,
       });
     });
 

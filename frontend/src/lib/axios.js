@@ -28,9 +28,23 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      const errorCode = error.response?.data?.code;
+      
+      // Clear all auth data only if token is invalid
+      if (errorCode === 'INVALID_TOKEN' || errorCode === 'TOKEN_EXPIRED') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        
+        // Dispatch custom event for auth store to handle
+        window.dispatchEvent(new Event('auth-logout'));
+        
+        // Show appropriate message based on error code
+        if (errorCode === 'INVALID_TOKEN') {
+          console.warn('Invalid authentication token. Please log in again.');
+        } else if (errorCode === 'TOKEN_EXPIRED') {
+          console.warn('Session expired. Please log in again.');
+        }
+      }
     }
     return Promise.reject(error);
   }

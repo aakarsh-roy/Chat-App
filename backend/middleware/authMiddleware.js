@@ -19,17 +19,42 @@ export const protect = async (req, res, next) => {
       req.user = await User.findById(decoded.id).select('-password');
 
       if (!req.user) {
-        return res.status(401).json({ message: 'Not authorized, user not found' });
+        return res.status(401).json({ 
+          message: 'Not authorized, user not found',
+          code: 'USER_NOT_FOUND'
+        });
       }
 
       next();
     } catch (error) {
-      console.error(error);
-      return res.status(401).json({ message: 'Not authorized, token failed' });
+      console.error('Auth error:', error.message);
+      
+      // Provide specific error messages for different JWT errors
+      if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({ 
+          message: 'Invalid token. Please log in again.',
+          code: 'INVALID_TOKEN'
+        });
+      }
+      
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ 
+          message: 'Token expired. Please log in again.',
+          code: 'TOKEN_EXPIRED'
+        });
+      }
+      
+      return res.status(401).json({ 
+        message: 'Not authorized, token failed',
+        code: 'AUTH_FAILED'
+      });
     }
   }
 
   if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token' });
+    return res.status(401).json({ 
+      message: 'Not authorized, no token',
+      code: 'NO_TOKEN'
+    });
   }
 };

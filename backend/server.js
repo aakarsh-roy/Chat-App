@@ -49,6 +49,8 @@ app.set('trust proxy', 1);
 
 // Security Middleware (Apply first)
 app.use(securityHeaders());
+
+// CORS Configuration (imported from securityMiddleware.js)
 app.use(cors(corsOptions));
 app.use(compression());
 
@@ -89,6 +91,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/contacts', contactRoutes);
+
+
 
 // Error handling
 app.use(errorLogger); // Log errors before handling
